@@ -10,6 +10,7 @@ from trytond.model import fields
 from trytond.pool import Pool, PoolMeta
 from trytond.transaction import Transaction
 from trytond.rpc import RPC
+from trytond.pyson import Eval
 
 __metaclass__ = PoolMeta
 __all__ = ["Sale", "SaleShop", "SaleLine"]
@@ -28,6 +29,14 @@ class SaleShop:
         required=True, domain=[('type', '=', 'warehouse')],
     )
 
+    delivery_mode = fields.Selection([
+        ('pick_up', 'Pick Up'),
+        ('ship', 'Ship'),
+    ], 'Delivery Mode', required=True)
+
+    @staticmethod
+    def default_delivery_mode():
+        return 'ship'
 
 class Sale:
     __name__ = "sale.sale"
@@ -306,11 +315,15 @@ class SaleLine:
     delivery_mode = fields.Selection([
         ('pick_up', 'Pick Up'),
         ('ship', 'Ship'),
-    ], 'Delivery Mode', required=True)
+    ], 'Delivery Mode', states={
+        'invisible': Eval('type') != 'line',
+    }, depends=['type'], required=True)
 
     @staticmethod
     def default_delivery_mode():
-        return 'ship'
+        User = Pool().get('res.user')
+        user = User(Transaction().user)
+        return user.shop.delivery_mode if user.shop else 'ship'
 
     def get_warehouse(self, name):
         """

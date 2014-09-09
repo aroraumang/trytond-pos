@@ -605,6 +605,7 @@ class TestSale(unittest.TestCase):
                     'currency': self.usd.id,
                 }])
 
+            self.assertEqual(self.shop.delivery_mode, 'ship')
             with Transaction().set_context(
                     company=self.company.id, shop=self.shop.id):
                 sale_line, = self.SaleLine.create([{
@@ -615,7 +616,9 @@ class TestSale(unittest.TestCase):
                     'unit': self.product1.default_uom.id,
                     'unit_price': Decimal('10'),
                 }])
-                self.assertEqual(sale_line.delivery_mode, 'ship')
+                self.assertEqual(
+                    sale_line.delivery_mode, self.shop.delivery_mode
+                )
 
     def test_0120_ship_pick_diff_warehouse(self):
         """

@@ -5,5 +5,7 @@
         <field name="ship_from_warehouse" />
         <label name="anonymous_customer"/>
         <field name="anonymous_customer"/>
+        <label name="delivery_mode" />
+        <field name="delivery_mode" />
     </xpath>
 </data>
