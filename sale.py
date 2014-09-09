@@ -10,7 +10,7 @@ from trytond.model import fields
 from trytond.pool import Pool, PoolMeta
 from trytond.transaction import Transaction
 from trytond.rpc import RPC
-from trytond.pyson import Eval
+from trytond.pyson import Eval, Bool
 
 __metaclass__ = PoolMeta
 __all__ = ["Sale", "SaleShop", "SaleLine"]
@@ -34,9 +34,21 @@ class SaleShop:
         ('ship', 'Ship'),
     ], 'Delivery Mode', required=True)
 
+    sale_shipment_cost_method = fields.Property(fields.Selection([
+        ('order', 'On Order'),
+        ('shipment', 'On Shipment'),
+    ], 'Sale Shipment Cost Method', states={
+        'required': Bool(Eval('context', {}).get('company')),
+    }))
+
     @staticmethod
     def default_delivery_mode():
         return 'ship'
+
+    @staticmethod
+    def default_sale_shipment_cost_method():
+        return 'shipment'
+
 
 class Sale:
     __name__ = "sale.sale"
@@ -308,6 +320,32 @@ class Sale:
 
         return invoice
 
+    @staticmethod
+    def default_shipment_cost_method():
+        User = Pool().get('res.user')
+        user = User(Transaction().user)
+        if not user.shop:
+            Config = Pool().get('sale.configuration')
+            config = Config(1)
+            return config.sale_shipment_cost_method
+        return user.shop.sale_shipment_method
+
+    @fields.depends(
+        'shop', 'company', 'invoice_method', 'shipment_method',
+        'warehouse', 'price_list', 'payment_term', 'shipment_cost_method'
+    )
+    def on_change_shop(self):
+        """
+        Change shipment cost method on change of shop
+        """
+        res = super(Sale, self).on_change_shop()
+
+        if res:
+            res.update({
+                'shipment_cost_method': self.shop.sale_shipment_cost_method,
+            })
+        return res
+
 
 class SaleLine:
     __name__ = 'sale.line'
@@ -321,9 +359,13 @@ class SaleLine:
 
     @staticmethod
     def default_delivery_mode():
-        User = Pool().get('res.user')
-        user = User(Transaction().user)
-        return user.shop.delivery_mode if user.shop else 'ship'
+        Sale = Pool().get('sale.sale')
+        if 'active_id' not in Transaction().context:
+            User = Pool().get('res.user')
+            user = User(Transaction().user)
+            return user.shop.delivery_mode if user.shop else 'ship'
+        sale = Sale(Transaction().context.get('active_id'))
+        return sale.shop.delivery_mode if sale.shop else 'ship'
 
     def get_warehouse(self, name):
         """

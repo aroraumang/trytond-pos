@@ -311,6 +311,7 @@ class TestSale(unittest.TestCase):
                 'sale_sequence': sequence.id,
                 'sale_invoice_method': 'order',
                 'sale_invoice_method': 'order',
+                'sale_shipment_cost_method': 'shipment',
             }])
             self.shop1, = self.Shop.create([{
                 'name': 'Shop',
@@ -322,6 +323,7 @@ class TestSale(unittest.TestCase):
                 'sale_sequence': sequence.id,
                 'sale_invoice_method': 'order',
                 'sale_invoice_method': 'order',
+                'sale_shipment_cost_method': 'shipment',
             }])
             user = self.User(USER)
             self.User.write([user], {

@@ -7,5 +7,7 @@
         <field name="anonymous_customer"/>
         <label name="delivery_mode" />
         <field name="delivery_mode" />
+        <label name="sale_shipment_cost_method" />
+        <field name="sale_shipment_cost_method" />
     </xpath>
 </data>
